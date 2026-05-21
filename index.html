@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Биржа заданий</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FAF7F2;--blush:#F2E8E1;--rose:#E8D5CC;--sand:#D9C9BA;
+  --mocha:#A08070;--espresso:#6B4F42;--deep:#3D2B22;
+  --accent:#C97B5A;--accent-light:#F0D5C8;
+  --gold:#C9A96E;--gold-light:#F5EDD8;
+  --green:#8FA882;--green-light:#E8F0E5;
+  --blue:#7A9BB5;--blue-light:#E4EDF5;
+  --text:#3D2B22;--text-soft:#8B6B5E;--text-muted:#B09080;
+  --shadow:rgba(160,120,100,0.12);
+  --card-bg:rgba(255,255,255,.75);--card-border:rgba(255,255,255,.9);
+  --stat-bg:#FAF7F2;--nav-bg:rgba(250,247,242,.92);--nav-border:#E8D5CC;
+  --modal-bg:#FAF7F2;
+}
+body.dark{
+  --cream:#1A1410;--blush:#231C17;--rose:#2E2218;--sand:#3A2C22;
+  --mocha:#C4A080;--espresso:#E8C4A8;--deep:#F5EDE6;
+  --accent:#E8935A;--accent-light:#3D2418;
+  --gold:#D4B47E;--gold-light:#2A2010;
+  --green:#9ABE8C;--green-light:#1A2818;
+  --blue:#8AABCF;--blue-light:#142030;
+  --text:#F5EDE6;--text-soft:#C4A890;--text-muted:#8A6E5E;
+  --shadow:rgba(0,0,0,0.35);
+  --card-bg:rgba(35,28,23,.85);--card-border:rgba(255,255,255,.08);
+  --stat-bg:#1A1410;--nav-bg:rgba(20,16,13,.95);--nav-border:#2E2218;
+  --modal-bg:#1E1812;
+}
+body.dark::before{background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(60,35,20,.8) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 85% 80%,rgba(40,25,15,.5) 0%,transparent 50%)}
+
+/* THEME TOGGLE */
+.theme-toggle{position:fixed;top:18px;right:16px;z-index:60;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--rose);background:var(--card-bg);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 2px 12px var(--shadow);transition:transform .2s,background .3s,border-color .3s}
+.theme-toggle:active{transform:scale(.9)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(242,232,225,.8) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 85% 80%,rgba(217,201,186,.5) 0%,transparent 50%);pointer-events:none;z-index:0}
+.bg-shape{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:.35}
+.bg-shape-1{width:300px;height:300px;background:radial-gradient(circle,#E8D5CC 0%,transparent 70%);top:-80px;right:-80px;animation:floatA 8s ease-in-out infinite}
+.bg-shape-2{width:200px;height:200px;background:radial-gradient(circle,#D9C9BA 0%,transparent 70%);bottom:20%;left:-60px;animation:floatB 10s ease-in-out infinite}
+@keyframes floatA{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.05)}}
+@keyframes floatB{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(15px) scale(.97)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.screen{display:none;position:relative;z-index:1;max-width:430px;margin:0 auto;padding:0 0 100px;animation:fadeIn .3s ease both}
+.screen.active{display:block}
+
+/* HEADER */
+.header{padding:28px 20px 20px}
+.header-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mocha);margin-bottom:6px;font-weight:500}
+.header-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:600;color:var(--deep);line-height:1.15;margin-bottom:4px}
+.header-title span{color:var(--accent)}
+.header-sub{font-size:13px;color:var(--text-soft);font-weight:300;font-style:italic}
+.live-badge{display:inline-flex;align-items:center;gap:5px;background:var(--accent-light);color:var(--accent);font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;margin-top:10px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.5s ease-in-out infinite}
+
+/* BALANCE */
+.balance-card{margin:0 16px 24px;background:var(--espresso);border-radius:20px;padding:20px 22px;position:relative;overflow:hidden;cursor:pointer;animation:slideUp .5s cubic-bezier(.22,.68,0,1.2) both;transition:transform .2s}
+.balance-card:active{transform:scale(.98)}
+.balance-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.06)}
+.balance-card::after{content:'';position:absolute;bottom:-30px;left:30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.04)}
+.balance-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
+.balance-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+.balance-amount{font-family:'Playfair Display',serif;font-size:36px;font-weight:500;background:linear-gradient(90deg,#fff 30%,rgba(255,255,255,.6) 50%,#fff 70%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite;line-height:1}
+.balance-rub{color:rgba(255,255,255,.6);font-size:20px}
+.balance-stars{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.8)}
+.balance-stars .star{color:#F5D97A}
+.balance-tap-hint{font-size:11px;color:rgba(255,255,255,.35);margin-top:10px;letter-spacing:.5px}
+
+/* SECTION */
+.section-label{display:flex;align-items:center;gap:10px;padding:0 20px 14px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mocha);font-weight:500}
+.section-label::after{content:'';flex:1;height:1px;background:var(--rose)}
+
+/* TASK CARDS */
+.task-card{margin:0 16px 14px;background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--card-border);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px var(--shadow);transition:transform .25s cubic-bezier(.22,.68,0,1.2),box-shadow .25s;animation:slideUp .5s cubic-bezier(.22,.68,0,1.2) both}
+.task-card:active{transform:scale(.985);box-shadow:0 2px 10px var(--shadow)}
+.card-accent{height:3px;background:linear-gradient(90deg,var(--rose) 0%,transparent 100%)}
+.card-accent-blue{background:linear-gradient(90deg,var(--blue-light) 0%,transparent 100%)}
+.card-accent-gold{background:linear-gradient(90deg,var(--gold-light) 0%,transparent 100%)}
+.card-accent-green{background:linear-gradient(90deg,var(--green-light) 0%,transparent 100%)}
+.card-accent-purple{background:linear-gradient(90deg,#EDE0F5 0%,transparent 100%)}
+.employer{display:flex;align-items:center;gap:11px;padding:14px 16px 12px;border-bottom:1px solid rgba(232,213,204,.4)}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;position:relative}
+.avatar::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:1.5px solid rgba(255,255,255,.8)}
+.av1{background:linear-gradient(135deg,#E8D5CC,#D9C9BA);color:var(--espresso)}
+.av2{background:linear-gradient(135deg,#F2E8E1,#E8D5CC);color:var(--espresso)}
+.av3{background:linear-gradient(135deg,#E8F0E5,#D4E4CF);color:#5A7A52}
+.av4{background:linear-gradient(135deg,#E4EDF5,#C8DDEF);color:#3A6E8F}
+.av5{background:linear-gradient(135deg,#F5EDD8,#EDD8A8);color:#7A5A18}
+.av6{background:linear-gradient(135deg,#EDE0F5,#D9C0EE);color:#6A3A8A}
+.av7{background:linear-gradient(135deg,#F5E8E0,#EDD0C0);color:#8A4A2A}
+.av8{background:linear-gradient(135deg,#E0F0E8,#C0E0D0);color:#2A6A50}
+.emp-info{flex:1;min-width:0}
+.emp-name{font-size:14px;font-weight:500;color:var(--deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emp-meta{display:flex;align-items:center;gap:5px;margin-top:2px}
+.stars{font-size:11px;color:var(--gold);letter-spacing:-1px}
+.rating{font-size:12px;font-weight:500;color:var(--espresso)}
+.reviews{font-size:11px;color:var(--text-muted)}
+.task-body{padding:14px 16px 16px}
+.task-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;letter-spacing:.5px;padding:4px 10px;border-radius:20px;margin-bottom:10px}
+.badge-review{background:var(--blush);color:var(--espresso)}
+.badge-video{background:var(--blue-light);color:#5A7E99}
+.badge-sub{background:var(--gold-light);color:#8A6930}
+.badge-social{background:var(--green-light);color:#3A6A30}
+.badge-photo{background:#EDE0F5;color:#6A3A8A}
+.badge-voice{background:#FDE8D8;color:#8A4A2A}
+.badge-design{background:#E0F0E8;color:#2A6A50}
+.task-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--deep);margin-bottom:6px;line-height:1.3}
+.task-desc{font-size:13px;color:var(--text-soft);line-height:1.5;font-weight:300;margin-bottom:14px}
+.task-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.price-block{display:flex;flex-direction:column;gap:2px}
+.price-rub{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--deep)}
+.price-stars{font-size:12px;color:var(--gold)}
+.take-btn{background:linear-gradient(135deg,var(--espresso) 0%,var(--accent) 100%);color:#fff;border:none;border-radius:14px;padding:12px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:transform .2s cubic-bezier(.22,.68,0,1.2),box-shadow .2s;box-shadow:0 4px 14px rgba(107,79,66,.3);white-space:nowrap}
+.take-btn:active{transform:scale(.95)}
+
+/* MORE TASKS */
+.more-btn{width:100%;padding:16px;background:var(--card-bg);backdrop-filter:blur(12px);border:1.5px dashed var(--sand);border-radius:18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--mocha);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.more-btn:active{background:var(--blush);transform:scale(.98)}
+
+/* LOAD MORE (subscribe gate) */
+.load-more-btn{width:100%;padding:16px 18px;background:linear-gradient(135deg,var(--espresso) 0%,var(--accent) 100%);border:none;border-radius:18px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 6px 22px rgba(107,79,66,.35);transition:transform .2s cubic-bezier(.22,.68,0,1.2),box-shadow .2s;animation:popIn .4s cubic-bezier(.22,.68,0,1.2) both}
+.load-more-btn:active{transform:scale(.97);box-shadow:0 3px 10px rgba(107,79,66,.25)}
+.load-more-icon{font-size:24px;flex-shrink:0}
+.load-more-text{flex:1;text-align:left}
+.load-more-title{font-size:15px;font-weight:500;color:#fff}
+.load-more-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.load-more-arrow{color:rgba(255,255,255,.6);font-size:22px;flex-shrink:0}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:50px 30px}
+.empty-icon{font-size:52px;margin-bottom:16px;opacity:.6}
+.empty-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--deep);margin-bottom:8px}
+.empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* PROFILE */
+.profile-hero{margin:0 16px 16px;background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--card-border);border-radius:22px;padding:24px 20px;box-shadow:0 4px 20px var(--shadow);animation:slideUp .4s cubic-bezier(.22,.68,0,1.2) both;text-align:center}
+.profile-av{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#E8D5CC,var(--rose));display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;position:relative;box-shadow:0 4px 16px rgba(160,120,100,.2);cursor:pointer;transition:transform .2s}
+.profile-av:active{transform:scale(.95)}
+.profile-av::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid rgba(255,255,255,.9)}
+.profile-av-edit{position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2;border:2px solid var(--cream)}
+.profile-name-wrap{display:flex;align-items:center;justify-content:center;gap:8px}
+.profile-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--deep);margin-bottom:4px}
+.edit-name-btn{background:none;border:none;color:var(--mocha);font-size:14px;cursor:pointer;padding:2px 4px;opacity:.6}
+.edit-name-btn:active{opacity:1}
+.profile-handle{font-size:13px;color:var(--text-muted)}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(232,213,204,.4);border-radius:14px;overflow:hidden;margin-top:18px}
+.stat-item{background:var(--stat-bg);padding:12px 8px;text-align:center}
+.stat-val{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--deep)}
+.stat-label{font-size:10px;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+.profile-section{margin:0 16px 10px}
+.profile-row{display:flex;align-items:center;gap:12px;background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--card-border);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px var(--shadow);cursor:pointer;transition:transform .15s}
+.profile-row:active{transform:scale(.98)}
+.profile-row-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.icon-rose{background:var(--blush)}
+.icon-gold{background:var(--gold-light)}
+.icon-blue{background:var(--blue-light)}
+.icon-green{background:var(--green-light)}
+.profile-row-text{flex:1}
+.profile-row-title{font-size:14px;font-weight:500;color:var(--deep)}
+.profile-row-sub{font-size:12px;color:var(--text-muted);margin-top:1px}
+.profile-row-arrow{color:var(--sand);font-size:18px}
+
+/* INLINE EDIT */
+.inline-edit{display:none;flex-direction:column;gap:8px;margin-top:10px}
+.inline-edit.open{display:flex}
+.inline-input{width:100%;padding:10px 14px;background:var(--card-bg);border:1.5px solid var(--rose);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--deep);outline:none;transition:border-color .2s}
+.inline-input:focus{border-color:var(--mocha)}
+.inline-btns{display:flex;gap:8px}
+.save-btn{flex:1;padding:10px;background:linear-gradient(135deg,var(--espresso),var(--accent));color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.cancel-btn{padding:10px 16px;background:var(--blush);color:var(--espresso);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--nav-bg);backdrop-filter:blur(16px);border-top:1px solid var(--nav-border);padding:10px 0 20px;display:flex;justify-content:space-around;z-index:50}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);letter-spacing:.5px;font-weight:500;text-transform:uppercase;padding:4px 16px;cursor:pointer;transition:color .2s}
+.nav-item.active{color:var(--espresso)}
+.nav-icon{font-size:20px}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:-2px;opacity:0}
+.nav-item.active .nav-dot{opacity:1}
+
+/* OVERLAYS */
+.overlay{position:fixed;inset:0;background:rgba(61,43,34,.4);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--modal-bg);border-radius:28px 28px 0 0;width:100%;max-width:430px;padding:10px 0 0;transform:translateY(100%);transition:transform .4s cubic-bezier(.22,.68,0,1.2);position:relative;overflow:hidden}
+.overlay.open .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--sand);border-radius:2px;margin:0 auto 20px}
+.modal-inner{padding:0 20px 44px}
+.modal-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mocha);margin-bottom:5px}
+.modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--deep);line-height:1.2}
+.modal-desc{font-size:13px;color:var(--text-soft);margin-top:6px;font-weight:300;font-style:italic;line-height:1.5;margin-bottom:20px}
+.channel-card{background:var(--card-bg);border:1px solid var(--rose);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:13px;transition:border-color .2s,background .2s}
+.channel-card.subscribed{background:var(--green-light);border-color:rgba(143,168,130,.5)}
+.ch-icon{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;box-shadow:0 2px 8px var(--shadow)}
+.channel-card.subscribed .ch-icon{background:linear-gradient(135deg,#E8F0E5,#D4E4CF)}
+.ch-info{flex:1}
+.ch-name{font-size:14px;font-weight:500;color:var(--deep)}
+.ch-subs{font-size:12px;color:var(--text-muted);margin-top:1px}
+.ch-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand);background:transparent;color:var(--espresso);cursor:pointer;transition:all .2s;white-space:nowrap}
+.ch-btn.done{background:var(--green-light);border-color:rgba(143,168,130,.6);color:#4A6E42}
+.ch-btn:active{transform:scale(.95)}
+.confirm-btn{width:100%;margin-top:18px;padding:16px;background:linear-gradient(135deg,var(--espresso) 0%,var(--accent) 100%);color:#fff;border:none;border-radius:16px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;box-shadow:0 6px 20px rgba(107,79,66,.3);transition:all .2s cubic-bezier(.22,.68,0,1.2);opacity:.45;pointer-events:none}
+.confirm-btn.active{opacity:1;pointer-events:all}
+.confirm-btn.active:active{transform:scale(.97)}
+.close-btn{position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:50%;background:var(--blush);border:none;color:var(--mocha);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.close-btn:active{background:var(--rose)}
+
+/* WITHDRAW */
+.input-group{margin-bottom:14px}
+.input-label{font-size:12px;font-weight:500;color:var(--espresso);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.styled-input{width:100%;padding:14px 16px;background:var(--card-bg);border:1.5px solid var(--rose);border-radius:14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--deep);outline:none;transition:border-color .2s,box-shadow .2s}
+.styled-input:focus{border-color:var(--mocha);box-shadow:0 0 0 3px rgba(160,120,100,.12)}
+.withdraw-btn{width:100%;margin-top:6px;padding:16px;background:linear-gradient(135deg,var(--espresso) 0%,var(--accent) 100%);color:#fff;border:none;border-radius:16px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;box-shadow:0 6px 20px rgba(107,79,66,.3);transition:transform .15s}
+.withdraw-btn:active{transform:scale(.97)}
+.error-msg{display:none;align-items:center;gap:8px;background:#FDF0ED;border:1px solid #F0B8A8;border-radius:12px;padding:12px 14px;margin-top:12px}
+.error-msg.show{display:flex;animation:shake .4s ease}
+.error-icon{font-size:18px;flex-shrink:0}
+.error-text{font-size:13px;color:#8B3A2A;font-weight:500;line-height:1.4}
+
+/* NOTIF TOGGLE */
+.notif-section-title{font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--mocha);margin:0 0 10px}
+.toggle-wrap{display:flex;align-items:center;gap:12px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px var(--shadow)}
+.toggle-label{flex:1;font-size:14px;font-weight:500;color:var(--deep)}
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--sand);border-radius:13px;transition:background .25s;cursor:pointer}
+.toggle input:checked+.toggle-track{background:var(--green)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .25s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.toggle input:checked~.toggle-thumb{transform:translateX(20px)}
+
+/* HISTORY EMPTY */
+.history-empty{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid var(--card-border);border-radius:20px;padding:40px 24px;margin:0 16px;text-align:center;box-shadow:0 4px 20px var(--shadow)}
+.history-empty-icon{font-size:44px;margin-bottom:14px;opacity:.5}
+.history-empty-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--deep);margin-bottom:6px}
+.history-empty-sub{font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* CHANNEL LINK BUTTON */
+.ch-link-btn{display:block;text-align:center;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 12px;border-radius:10px;background:linear-gradient(135deg,var(--espresso),var(--accent));color:#fff;text-decoration:none;white-space:nowrap;transition:opacity .2s}
+.ch-link-btn:active{opacity:.8}
+
+/* AVATAR PICKER */
+.av-picker{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:16px 0}
+.av-opt{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border:2.5px solid transparent;transition:all .2s}
+.av-opt.selected{border-color:var(--accent);transform:scale(1.1)}
+.av-opt:active{transform:scale(.95)}
+</style>
+</head>
+<body>
+<div class="bg-shape bg-shape-1"></div>
+<div class="bg-shape bg-shape-2"></div>
+
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Сменить тему">☀️</button>
+
+<!-- ══════════ ЭКРАН: ЗАДАНИЯ ══════════ -->
+<div class="screen active" id="screen-tasks">
+  <div class="header">
+    <div class="header-eyebrow">Биржа заданий</div>
+    <div class="header-title">Заработай<br><span>сегодня</span></div>
+    <div class="header-sub">Простые задания — реальные деньги</div>
+    <div class="live-badge"><span class="live-dot"></span>8 заданий доступно</div>
+  </div>
+
+  <div class="balance-card" onclick="openWithdraw()">
+    <div class="balance-label">Мой баланс</div>
+    <div class="balance-row"><div class="balance-amount">0</div><div class="balance-rub">₽</div></div>
+    <div class="balance-stars"><span class="star">⭐</span>0 звёзд Telegram</div>
+    <div class="balance-tap-hint">Нажмите для вывода средств →</div>
+  </div>
+
+  <div class="section-label">Актуальные задания</div>
+
+  <div class="task-card" style="animation-delay:.05s">
+    <div class="card-accent"></div>
+    <div class="employer">
+      <div class="avatar av1">✧M</div>
+      <div class="emp-info">
+        <div class="emp-name">✧𝙼y𝚕𝚌𝚎𝚔✧</div>
+        <div class="emp-meta"><span class="stars">★★★★★</span><span class="rating">5.0</span><span class="reviews">· 34 отзыва</span></div>
+      </div>
+    </div>
+    <div class="task-body">
+      <div class="task-badge badge-review">📝 Отзыв</div>
+      <div class="task-title">Написать отзыв на Авито</div>
+      <div class="task-desc">Подробности после принятия.</div>
+      <div class="task-footer">
+        <div class="price-block"><div class="price-rub">350 ₽</div><div class="price-stars">⭐ 400 звёзд</div></div>
+        <button class="take-btn" onclick="openSubModal()">Взять →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" style="animation-delay:.1s">
+    <div class="card-accent card-accent-blue"></div>
+    <div class="employer">
+      <div class="avatar av2">Д</div>
+      <div class="emp-info">
+        <div class="emp-name">дашенька</div>
+        <div class="emp-meta"><span class="stars">★★★★★</span><span class="rating">4.9</span><span class="reviews">· 27 отзывов</span></div>
+      </div>
+    </div>
+    <div class="task-body">
+      <div class="task-badge badge-video">🎬 Монтаж</div>
+      <div class="task-title">Смонтировать видео для TikTok</div>
+      <div class="task-desc">Ролик до 60 сек. ТЗ пришлём после принятия.</div>
+      <div class="task-footer">
+        <div class="price-block"><div class="price-rub">1 800 ₽</div><div class="price-stars">в рублях</div></div>
+        <button class="take-btn" onclick="openSubModal()">Взять →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="task-card" style="animation-delay:.15s">
+    <div class="card-accent card-accent-gold"></div>
+    <div class="employer">
+      <div class="avatar av3">Cr</div>
+      <div class="emp-info">
+        <div class="emp-name">cricker</div>
+        <div class="emp-meta"><span class="stars">★★★★☆</span><span class="rating">4.7</span><span class="reviews">· 21 отзыв</span></div>
+      </div>
+    </div>
+    <div class="task-body">
+      <div class="task-badge badge-sub">📢 Подписка</div>
+      <div class="task-title">Подписаться на Telegram-канал</div>
+      <div class="task-desc">На 30+ дней. Ссылка сразу после принятия.</div>
+      <div class="task-footer">
+        <div class="price-block"><div class="price-rub">15 ₽</div><div class="price-stars">⭐ 30 звёзд</div></div>
+        <button class="take-btn" onclick="openSubModal()">Взять →</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin:0 16px 20px">
+    <button class="more-btn" id="more-btn" onclick="showMoreTasks()">
+      <span id="more-icon">✦</span>
+      Посмотреть больше заданий
+    </button>
+  </div>
+
+  <div id="extra-tasks" style="display:none">
+
+    <div class="task-card" style="animation-delay:.05s">
+      <div class="card-accent card-accent-green"></div>
+      <div class="employer">
+        <div class="avatar av4">Ан</div>
+        <div class="emp-info">
+          <div class="emp-name">анонимка</div>
+          <div class="emp-meta"><span class="stars">★★★★★</span><span class="rating">5.0</span><span class="reviews">· 38 отзывов</span></div>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-badge badge-social">👍 Лайк</div>
+        <div class="task-title">Поставить лайки ВКонтакте</div>
+        <div class="task-desc">5 лайков. Ссылки после принятия.</div>
+        <div class="task-footer">
+          <div class="price-block"><div class="price-rub">50 ₽</div><div class="price-stars">⭐ 60 звёзд</div></div>
+          <button class="take-btn" onclick="openSubModal()">Взять →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-card" style="animation-delay:.1s">
+      <div class="card-accent card-accent-purple"></div>
+      <div class="employer">
+        <div class="avatar av6">Ки</div>
+        <div class="emp-info">
+          <div class="emp-name">kira.sm</div>
+          <div class="emp-meta"><span class="stars">★★★★☆</span><span class="rating">4.8</span><span class="reviews">· 15 отзывов</span></div>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-badge badge-photo">📸 Фото</div>
+        <div class="task-title">Отзыв с фото на Яндекс.Картах</div>
+        <div class="task-desc">Фото + отзыв на заведение. Без строгих требований.</div>
+        <div class="task-footer">
+          <div class="price-block"><div class="price-rub">250 ₽</div><div class="price-stars">⭐ 280 звёзд</div></div>
+          <button class="take-btn" onclick="openSubModal()">Взять →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-card" style="animation-delay:.15s">
+      <div class="card-accent card-accent-gold"></div>
+      <div class="employer">
+        <div class="avatar av5">Мк</div>
+        <div class="emp-info">
+          <div class="emp-name">maksim.k</div>
+          <div class="emp-meta"><span class="stars">★★★★★</span><span class="rating">4.9</span><span class="reviews">· 42 отзыва</span></div>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-badge badge-sub">📢 Подписка</div>
+        <div class="task-title">Подписаться на YouTube-канал</div>
+        <div class="task-desc">Подписка + просмотр одного видео до конца.</div>
+        <div class="task-footer">
+          <div class="price-block"><div class="price-rub">30 ₽</div><div class="price-stars">⭐ 35 звёзд</div></div>
+          <button class="take-btn" onclick="openSubModal()">Взять →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-card" style="animation-delay:.2s">
+      <div class="card-accent"></div>
+      <div class="employer">
+        <div class="avatar av7">Св</div>
+        <div class="emp-info">
+          <div class="emp-name">svetlana_v</div>
+          <div class="emp-meta"><span class="stars">★★★★☆</span><span class="rating">4.6</span><span class="reviews">· 19 отзывов</span></div>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-badge badge-voice">🎙 Голос</div>
+        <div class="task-title">Голосовое сообщение в Telegram</div>
+        <div class="task-desc">10-секундный голос по готовому тексту.</div>
+        <div class="task-footer">
+          <div class="price-block"><div class="price-rub">120 ₽</div><div class="price-stars">⭐ 140 звёзд</div></div>
+          <button class="take-btn" onclick="openSubModal()">Взять →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="task-card" style="animation-delay:.25s">
+      <div class="card-accent card-accent-green"></div>
+      <div class="employer">
+        <div class="avatar av8">Дм</div>
+        <div class="emp-info">
+          <div class="emp-name">dm_pro</div>
+          <div class="emp-meta"><span class="stars">★★★★★</span><span class="rating">5.0</span><span class="reviews">· 61 отзыв</span></div>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-badge badge-design">🎨 Дизайн</div>
+        <div class="task-title">Оценка приложения в App Store</div>
+        <div class="task-desc">5 звёзд + 2–3 предложения. Тему подскажем.</div>
+        <div class="task-footer">
+          <div class="price-block"><div class="price-rub">200 ₽</div><div class="price-stars">⭐ 230 звёзд</div></div>
+          <button class="take-btn" onclick="openSubModal()">Взять →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- КНОПКА: Открыть ещё задания (появляется после раскрытия всех) -->
+  <div id="load-more-wrap" style="display:none;margin:0 16px 24px">
+    <button class="load-more-btn" onclick="openSubModalMore()">
+      <span class="load-more-icon">🔓</span>
+      <div class="load-more-text">
+        <div class="load-more-title">Открыть ещё задания</div>
+        <div class="load-more-sub">Подпишитесь на каналы для доступа</div>
+      </div>
+      <span class="load-more-arrow">›</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ══════════ ЭКРАН: МОИ ЗАДАНИЯ ══════════ -->
+<div class="screen" id="screen-my">
+  <div class="header">
+    <div class="header-eyebrow">Мои задания</div>
+    <div class="header-title">Моя <span>работа</span></div>
+    <div class="header-sub">Отслеживай статус выполнения</div>
+  </div>
+
+  <div class="balance-card" onclick="openWithdraw()">
+    <div class="balance-label">Мой баланс</div>
+    <div class="balance-row"><div class="balance-amount">0</div><div class="balance-rub">₽</div></div>
+    <div class="balance-stars"><span class="star">⭐</span>0 звёзд Telegram</div>
+    <div class="balance-tap-hint">Нажмите для вывода средств →</div>
+  </div>
+
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <div class="empty-title">Нет активных заданий</div>
+    <div class="empty-sub">Вы ещё не взяли ни одного задания.<br>Перейдите во вкладку «Задания» и начните зарабатывать!</div>
+  </div>
+</div>
+
+<!-- ══════════ ЭКРАН: ПРОФИЛЬ ══════════ -->
+<div class="screen" id="screen-profile">
+  <div class="header">
+    <div class="header-eyebrow">Мой профиль</div>
+    <div class="header-title"><span>Профиль</span></div>
+    <div class="header-sub">Настройки и статистика</div>
+  </div>
+
+  <div class="profile-hero">
+    <div class="profile-av" id="profile-avatar" onclick="openAvatarPicker()" title="Сменить аватар">
+      <span id="avatar-emoji">👤</span>
+      <div class="profile-av-edit">✏️</div>
+    </div>
+    <div class="profile-name-wrap">
+      <div class="profile-name" id="profile-name-display">Пользователь</div>
+      <button class="edit-name-btn" onclick="toggleEditName()" title="Изменить имя">✏️</button>
+    </div>
+    <div class="profile-handle" id="profile-handle-display">@username · в сервисе с мая 2025</div>
+
+    <!-- Форма редактирования -->
+    <div class="inline-edit" id="edit-form">
+      <input class="inline-input" id="edit-name-input" type="text" placeholder="Ваше имя" maxlength="24">
+      <input class="inline-input" id="edit-handle-input" type="text" placeholder="@username" maxlength="24">
+      <div class="inline-btns">
+        <button class="save-btn" onclick="saveProfile()">Сохранить</button>
+        <button class="cancel-btn" onclick="cancelEdit()">Отмена</button>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <div class="stat-item"><div class="stat-val">0</div><div class="stat-label">Задания</div></div>
+      <div class="stat-item"><div class="stat-val">0 ₽</div><div class="stat-label">Заработано</div></div>
+      <div class="stat-item"><div class="stat-val">0 ⭐</div><div class="stat-label">Звёзды</div></div>
+    </div>
+  </div>
+
+  <div class="profile-section">
+    <div class="profile-row" onclick="openWithdraw()">
+      <div class="profile-row-icon icon-rose">💳</div>
+      <div class="profile-row-text">
+        <div class="profile-row-title">Вывод средств</div>
+        <div class="profile-row-sub">На карту или реквизиты</div>
+      </div>
+      <div class="profile-row-arrow">›</div>
+    </div>
+    <div class="profile-row" onclick="openHistory()">
+      <div class="profile-row-icon icon-gold">📊</div>
+      <div class="profile-row-text">
+        <div class="profile-row-title">История выплат</div>
+        <div class="profile-row-sub">Все транзакции</div>
+      </div>
+      <div class="profile-row-arrow">›</div>
+    </div>
+    <div class="profile-row" onclick="openNotif()">
+      <div class="profile-row-icon icon-blue">🔔</div>
+      <div class="profile-row-text">
+        <div class="profile-row-title">Уведомления</div>
+        <div class="profile-row-sub">Новые задания и статусы</div>
+      </div>
+      <div class="profile-row-arrow">›</div>
+    </div>
+    <div class="profile-row">
+      <div class="profile-row-icon icon-green">⭐</div>
+      <div class="profile-row-text">
+        <div class="profile-row-title">Telegram Stars</div>
+        <div class="profile-row-sub">Баланс: 0 звёзд</div>
+      </div>
+      <div class="profile-row-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- НАВБАР -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('tasks',this)"><span class="nav-icon">📋</span>Задания<div class="nav-dot"></div></div>
+  <div class="nav-item" onclick="switchTab('my',this)"><span class="nav-icon">💼</span>Мои<div class="nav-dot"></div></div>
+  <div class="nav-item" onclick="switchTab('profile',this)"><span class="nav-icon">👤</span>Профиль<div class="nav-dot"></div></div>
+</div>
+
+<!-- МОДАЛ: ПОДПИСКА -->
+<div class="overlay" id="sub-overlay" onclick="handleBg(event,'sub-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOverlay('sub-overlay')">✕</button>
+    <div class="modal-inner">
+      <div class="modal-eyebrow">Почти готово</div>
+      <div class="modal-title">Подпишитесь на 2 канала</div>
+      <div class="modal-desc">Обязательное условие для доступа к заданиям</div>
+      <div class="channel-card" id="ch1"><div class="ch-icon">✈️</div><div class="ch-info"><div class="ch-name">Канал 1</div><div class="ch-subs">Нажмите «Перейти», затем подпишитесь</div></div><div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0"><a class="ch-link-btn" href="https://t.me/+lfukqAvLbG8yYjIy" target="_blank">Перейти →</a><button class="ch-btn" id="btn1" onclick="toggleSub(1)">✓ Подписан</button></div></div>
+      <div class="channel-card" id="ch2"><div class="ch-icon">✈️</div><div class="ch-info"><div class="ch-name">Канал 2</div><div class="ch-subs">Нажмите «Перейти», затем подпишитесь</div></div><div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0"><a class="ch-link-btn" href="https://t.me/+rsT1hRQsoxwzYzQy" target="_blank">Перейти →</a><button class="ch-btn" id="btn2" onclick="toggleSub(2)">✓ Подписан</button></div></div>
+      <button class="confirm-btn" id="confirmBtn" onclick="doConfirm()">Готово — взять задание ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛ: ВЫВОД -->
+<div class="overlay" id="withdraw-overlay" onclick="handleBg(event,'withdraw-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOverlay('withdraw-overlay')">✕</button>
+    <div class="modal-inner">
+      <div class="modal-eyebrow">Финансы</div>
+      <div class="modal-title">Вывод на карту</div>
+      <div class="modal-desc">Укажите сумму и номер карты</div>
+      <div class="input-group">
+        <div class="input-label">Сумма вывода (₽)</div>
+        <input class="styled-input" type="number" id="withdraw-amount" placeholder="Например: 500" inputmode="numeric">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Номер карты</div>
+        <input class="styled-input" type="text" id="withdraw-card" placeholder="0000 0000 0000 0000" inputmode="numeric" maxlength="19">
+      </div>
+      <button class="withdraw-btn" onclick="tryWithdraw()">Вывести средства →</button>
+      <div class="error-msg" id="error-msg">
+        <span class="error-icon">⚠️</span>
+        <div class="error-text">Недостаточно средств для вывода. Пополните баланс, выполнив задания.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛ: ИСТОРИЯ ВЫПЛАТ -->
+<div class="overlay" id="history-overlay" onclick="handleBg(event,'history-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOverlay('history-overlay')">✕</button>
+    <div class="modal-inner">
+      <div class="modal-eyebrow">Финансы</div>
+      <div class="modal-title">История выплат</div>
+      <div class="modal-desc">Все ваши транзакции и выводы</div>
+      <div class="history-empty">
+        <div class="history-empty-icon">🪹</div>
+        <div class="history-empty-title">Выплат пока нет</div>
+        <div class="history-empty-sub">Здесь появится история после того, как вы выполните первое задание и получите оплату.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛ: УВЕДОМЛЕНИЯ -->
+<div class="overlay" id="notif-overlay" onclick="handleBg(event,'notif-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOverlay('notif-overlay')">✕</button>
+    <div class="modal-inner">
+      <div class="modal-eyebrow">Настройки</div>
+      <div class="modal-title">Уведомления</div>
+      <div class="modal-desc" style="margin-bottom:24px">Выберите, о чём хотите получать оповещения</div>
+      <div class="notif-section-title">Задания</div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Новые задания</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Когда появляются свежие задания</div></div>
+        <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Статус задания</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Обновления по вашим заданиям</div></div>
+        <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="notif-section-title" style="margin-top:16px">Финансы</div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Поступление оплаты</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Когда деньги зачислены</div></div>
+        <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="toggle-wrap">
+        <div><div class="toggle-label">Вывод средств</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Статус вывода на карту</div></div>
+        <label class="toggle"><input type="checkbox"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛ: ВЫБОР АВАТАРА -->
+<div class="overlay" id="avatar-overlay" onclick="handleBg(event,'avatar-overlay')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeOverlay('avatar-overlay')">✕</button>
+    <div class="modal-inner">
+      <div class="modal-eyebrow">Профиль</div>
+      <div class="modal-title">Выберите аватар</div>
+      <div class="modal-desc">Нажмите на понравившийся эмодзи</div>
+      <div class="av-picker">
+        <div class="av-opt" onclick="selectAvatar('😊')">😊</div>
+        <div class="av-opt" onclick="selectAvatar('😎')">😎</div>
+        <div class="av-opt" onclick="selectAvatar('🦊')">🦊</div>
+        <div class="av-opt" onclick="selectAvatar('🐱')">🐱</div>
+        <div class="av-opt" onclick="selectAvatar('🐸')">🐸</div>
+        <div class="av-opt" onclick="selectAvatar('🌸')">🌸</div>
+        <div class="av-opt" onclick="selectAvatar('🔥')">🔥</div>
+        <div class="av-opt" onclick="selectAvatar('⚡')">⚡</div>
+        <div class="av-opt" onclick="selectAvatar('🎯')">🎯</div>
+        <div class="av-opt" onclick="selectAvatar('💎')">💎</div>
+        <div class="av-opt" onclick="selectAvatar('🚀')">🚀</div>
+        <div class="av-opt" onclick="selectAvatar('👑')">👑</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Theme toggle
+var isDark = localStorage.getItem('theme') === 'dark';
+function applyTheme(){
+  document.body.classList.toggle('dark', isDark);
+  document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+}
+applyTheme();
+function toggleTheme(){
+  isDark = !isDark;
+  try{localStorage.setItem('theme', isDark ? 'dark' : 'light');}catch(e){}
+  applyTheme();
+}
+function switchTab(tab,el){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.className='nav-item'});
+  document.getElementById('screen-'+tab).classList.add('active');
+  el.className='nav-item active';
+  window.scrollTo(0,0);
+}
+
+// More tasks
+var moreShown=false;
+function showMoreTasks(){
+  if(moreShown)return;
+  moreShown=true;
+  document.getElementById('more-btn').style.display='none';
+  document.getElementById('extra-tasks').style.display='block';
+  document.getElementById('load-more-wrap').style.display='block';
+}
+
+// Sub modal — triggered from "load more" button
+function openSubModalMore(){
+  // Update modal text to reflect context
+  document.querySelector('#sub-overlay .modal-eyebrow').textContent='Ещё задания';
+  document.querySelector('#sub-overlay .modal-title').textContent='Подпишитесь на каналы';
+  document.querySelector('#sub-overlay .modal-desc').textContent='Чтобы открыть дополнительные задания, подпишитесь на оба канала';
+  document.getElementById('confirmBtn').textContent='Открыть задания ✓';
+  openSubModal();
+}
+
+// Sub modal
+var s1=false,s2=false;
+function openSubModal(){
+  document.querySelector('#sub-overlay .modal-eyebrow').textContent='Почти готово';
+  document.querySelector('#sub-overlay .modal-title').textContent='Подпишитесь на 2 канала';
+  document.querySelector('#sub-overlay .modal-desc').textContent='Обязательное условие для доступа к заданиям';
+  document.getElementById('confirmBtn').textContent='Готово — взять задание ✓';
+  document.getElementById('sub-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function toggleSub(n){
+  if(n===1){s1=!s1;var b=document.getElementById('btn1'),c=document.getElementById('ch1');b.textContent=s1?'✓ Подписан':'Подписаться';b.className=s1?'ch-btn done':'ch-btn';c.className=s1?'channel-card subscribed':'channel-card'}
+  else{s2=!s2;var b=document.getElementById('btn2'),c=document.getElementById('ch2');b.textContent=s2?'✓ Подписан':'Подписаться';b.className=s2?'ch-btn done':'ch-btn';c.className=s2?'channel-card subscribed':'channel-card'}
+  document.getElementById('confirmBtn').className=(s1&&s2)?'confirm-btn active':'confirm-btn';
+}
+function doConfirm(){if(s1&&s2)closeOverlay('sub-overlay')}
+
+// Withdraw
+function openWithdraw(){
+  document.getElementById('withdraw-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('error-msg').classList.remove('show');
+  document.getElementById('withdraw-amount').value='';
+  document.getElementById('withdraw-card').value='';
+}
+function tryWithdraw(){
+  var err=document.getElementById('error-msg');
+  err.classList.remove('show');
+  void err.offsetWidth;
+  err.classList.add('show');
+}
+document.getElementById('withdraw-card').addEventListener('input',function(){
+  var v=this.value.replace(/\D/g,'').substring(0,16);
+  this.value=v.replace(/(.{4})/g,'$1 ').trim();
+});
+
+// History & Notif
+function openHistory(){document.getElementById('history-overlay').classList.add('open');document.body.style.overflow='hidden'}
+function openNotif(){document.getElementById('notif-overlay').classList.add('open');document.body.style.overflow='hidden'}
+
+// Overlays
+function closeOverlay(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
+function handleBg(e,id){if(e.target===document.getElementById(id))closeOverlay(id)}
+
+// ───── PROFILE ─────
+var profileData = {
+  name: localStorage.getItem('pName') || 'Пользователь',
+  handle: localStorage.getItem('pHandle') || '@username',
+  avatar: localStorage.getItem('pAvatar') || '👤'
+};
+
+function renderProfile(){
+  document.getElementById('profile-name-display').textContent = profileData.name;
+  document.getElementById('profile-handle-display').textContent = profileData.handle + ' · в сервисе с мая 2025';
+  document.getElementById('avatar-emoji').textContent = profileData.avatar;
+}
+renderProfile();
+
+function toggleEditName(){
+  var form = document.getElementById('edit-form');
+  var isOpen = form.classList.contains('open');
+  if(isOpen){ cancelEdit(); return; }
+  document.getElementById('edit-name-input').value = profileData.name;
+  document.getElementById('edit-handle-input').value = profileData.handle;
+  form.classList.add('open');
+  document.getElementById('edit-name-input').focus();
+}
+
+function saveProfile(){
+  var name = document.getElementById('edit-name-input').value.trim();
+  var handle = document.getElementById('edit-handle-input').value.trim();
+  if(!name) return;
+  // Добавляем @ если нет
+  if(handle && handle[0] !== '@') handle = '@' + handle;
+  profileData.name = name;
+  profileData.handle = handle || '@username';
+  try{localStorage.setItem('pName', profileData.name);localStorage.setItem('pHandle', profileData.handle);}catch(e){}
+  renderProfile();
+  document.getElementById('edit-form').classList.remove('open');
+}
+
+function cancelEdit(){
+  document.getElementById('edit-form').classList.remove('open');
+}
+
+// Avatar picker
+function openAvatarPicker(){
+  // Mark current
+  document.querySelectorAll('.av-opt').forEach(function(el){
+    el.classList.toggle('selected', el.textContent === profileData.avatar);
+  });
+  document.getElementById('avatar-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function selectAvatar(emoji){
+  profileData.avatar = emoji;
+  try{localStorage.setItem('pAvatar', emoji);}catch(e){}
+  renderProfile();
+  closeOverlay('avatar-overlay');
+}
+</script>
+</body>
+</html>
